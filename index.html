@@ -83,7 +83,7 @@
           if (obj.country === selectedCountry) {
             if (obj.cases > MIN_CASES) {
               acc.push({
-                date: `${obj.day}/${obj.month}`,
+                date: `${obj.month}/${obj.day}`,
                 cases: obj.cases,
                 deaths: obj.deaths,
               });
@@ -91,7 +91,7 @@
           }
           return acc;
         }, []);
-        drawChart(countryData);
+        drawChart(countryData.reverse());
       }
 
       d3.csv("covid19.csv").then(function(data) {
