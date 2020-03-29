@@ -18,62 +18,76 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
     <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
     <select id="countries" onchange="selectCountry()">
     </select>
     <div id="chart"></div>
     <script>
       let jsonData = {};
-
+      let MIN_CASES = 0;
       function drawChart(data) {
-        let margin = {top: 20, right: 20, bottom: 30, left: 50},
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
-        let parseTime = d3.timeParse("%d/%m/%Y");
-        let x = d3.scaleTime().range([0, width]);
-        let y = d3.scaleLinear().range([height, 0]);
-
-        data = data.filter((d) => d.cases > 5);
-        data.forEach(function(d, idx) {
-            d.date = parseTime(d.date);
-            d.cases = +d.cases;
-            d.deaths = +d.deaths;
+        Highcharts.chart('chart', {
+          title: {
+                text: 'Number of cases and deaths of COVID19 per day',
+                align: 'left'
+            },
+            xAxis: {
+                categories: data.map((d) => d.date)
+            },
+            yAxis: [{ // Secondary yAxis
+                gridLineWidth: 0,
+                title: {
+                    text: 'Cases',
+                    style: {
+                        color: Highcharts.getOptions().colors[0]
+                    }
+                },
+                labels: {
+                    format: '{value}',
+                    style: {
+                        color: Highcharts.getOptions().colors[0]
+                    }
+                }
+            }, { // Tertiary yAxis
+                gridLineWidth: 0,
+                title: {
+                    text: 'Deaths',
+                    style: {
+                        color: Highcharts.getOptions().colors[1]
+                    }
+                },
+                labels: {
+                    format: '{value}',
+                    style: {
+                        color: Highcharts.getOptions().colors[1]
+                    }
+                },
+                opposite: true
+            }],
+            series: [{
+                name: 'Cases',
+                yAxis: 0,
+                data: data.map((d) => +d.cases)
+            }, {
+                name: 'Deaths',
+                yAxis: 1,
+                data: data.map((d) => +d.deaths),
+                color: '#FF0000'
+            }]
         });
-        let valueline = d3.line()
-            .x(function(d) { return x(d.date); })
-            .y(function(d) { return y(d.cases); });
-
-        d3.select("svg").remove();
-        let svg = d3.select("#chart").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform",
-                  "translate(" + margin.left + "," + margin.top + ")");
-
-          x.domain(d3.extent(data, function(d) { return d.date; }));
-          y.domain([0, d3.max(data, function(d) { return d.cases; })]);
-
-          svg.append("path")
-              .data([data])
-              .attr("class", "line")
-              .attr("d", valueline);
-
-          svg.append("g")
-              .attr("transform", "translate(0," + height + ")")
-              .call(d3.axisBottom(x));
-          svg.append("g")
-              .call(d3.axisLeft(y));
       }
 
       function selectCountry() {
         const selectedCountry = document.getElementById("countries").value;
         const countryData = jsonData.reduce((acc, obj) => {
           if (obj.country === selectedCountry) {
-            acc.push({
-              date: `${obj.day}/${obj.month}/2020`,
-              cases: obj.cases,
-              deaths: obj.deaths,
-            });
+            if (obj.cases > MIN_CASES) {
+              acc.push({
+                date: `${obj.day}/${obj.month}`,
+                cases: obj.cases,
+                deaths: obj.deaths,
+              });
+            }
           }
           return acc;
         }, []);
